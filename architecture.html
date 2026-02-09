@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contains Studio App - 系統架構圖</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #e0e0e0;
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d2ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+        .diagram-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .diagram-section h2 {
+            color: #7b2ff7;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            border-left: 4px solid #7b2ff7;
+            padding-left: 12px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+        .mermaid svg {
+            max-width: 100%;
+        }
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .tech-card {
+            background: rgba(123, 47, 247, 0.1);
+            border: 1px solid rgba(123, 47, 247, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .tech-card h3 {
+            color: #00d2ff;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+        .tech-card ul {
+            list-style: none;
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+        .tech-card ul li::before {
+            content: "▸ ";
+            color: #7b2ff7;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Contains Studio App - 系統架構圖</h1>
+<p class="subtitle">AI Agents Studio ｜ 整合 Google Gemini AI 的多部門智慧代理平台</p>
+
+<!-- 1. 整體系統架構 -->
+<div class="diagram-section">
+    <h2>1. 整體系統架構 (System Architecture)</h2>
+    <div class="mermaid">
+graph TB
+    subgraph CLIENT["🖥️ 前端 Frontend (React 18 SPA)"]
+        UI["使用者介面<br/>Tailwind CSS + Dark Theme"]
+        DEPT["部門選擇器<br/>8 個部門"]
+        AGENT["代理選擇器<br/>37 個 AI Agents"]
+        CHAT["聊天介面<br/>即時對話"]
+        STATE["狀態管理<br/>useState + localStorage"]
+        STRIPE_UI["Stripe 付費牆<br/>3 次免費分析"]
+    end
+
+    subgraph VERCEL["☁️ Vercel 雲端平台"]
+        CDN["Vercel CDN<br/>靜態資源託管"]
+        SF["Serverless Function<br/>api/chat.js"]
+        SECURITY["安全層<br/>Rate Limit · CORS · 輸入驗證"]
+    end
+
+    subgraph EXTERNAL["🌐 外部服務"]
+        GEMINI["Google Gemini AI<br/>生成式 AI API"]
+        STRIPE["Stripe<br/>金流付款"]
+        GITHUB["GitHub<br/>程式碼託管"]
+    end
+
+    USER((👤 使用者)) --> UI
+    UI --> DEPT --> AGENT --> CHAT
+    CHAT --> STATE
+    STRIPE_UI --> STRIPE
+
+    CHAT -->|"POST /api/chat"| SF
+    SF --> SECURITY
+    SECURITY -->|"API Call"| GEMINI
+    GEMINI -->|"AI 回應"| SF
+    SF -->|"JSON Response"| CHAT
+
+    CDN -->|"靜態資源"| CLIENT
+    GITHUB -->|"CI/CD 自動部署"| VERCEL
+
+    style CLIENT fill:#1a1a2e,stroke:#7b2ff7,color:#fff
+    style VERCEL fill:#1a1a2e,stroke:#00d2ff,color:#fff
+    style EXTERNAL fill:#1a1a2e,stroke:#ff6b6b,color:#fff
+    style USER fill:#7b2ff7,stroke:#7b2ff7,color:#fff
+    </div>
+</div>
+
+<!-- 2. 前端元件架構 -->
+<div class="diagram-section">
+    <h2>2. 前端元件架構 (Frontend Component Architecture)</h2>
+    <div class="mermaid">
+graph TD
+    subgraph ENTRY["入口"]
+        HTML["index.html<br/>zh-TW"]
+        MAIN["main.jsx<br/>React 進入點"]
+        CSS["index.css<br/>全域樣式 + Tailwind"]
+    end
+
+    subgraph APP["App.jsx (主元件 - 497 行)"]
+        direction TB
+        HOOKS["Custom Hooks"]
+        USEUSER["useUser Hook<br/>- 使用者狀態<br/>- 分析次數追蹤<br/>- 付費狀態<br/>- localStorage 持久化"]
+
+        COMPONENTS["子元件"]
+        PAYMENT["StripePaymentLink<br/>付費牆元件"]
+        DEPTVIEW["部門瀏覽<br/>8 部門 · 漸層色彩"]
+        AGENTVIEW["代理瀏覽<br/>37 個專業代理"]
+        CHATVIEW["聊天視窗<br/>訊息泡泡 · 動畫載入"]
+    end
+
+    subgraph STATES["應用程式狀態"]
+        S1["selectedDepartment"]
+        S2["selectedAgent"]
+        S3["messages[]"]
+        S4["loading"]
+        S5["messageLength"]
+    end
+
+    HTML --> MAIN --> APP
+    MAIN --> CSS
+    APP --> HOOKS
+    HOOKS --> USEUSER
+    APP --> COMPONENTS
+    COMPONENTS --> PAYMENT
+    COMPONENTS --> DEPTVIEW
+    COMPONENTS --> AGENTVIEW
+    COMPONENTS --> CHATVIEW
+    APP --> STATES
+
+    style ENTRY fill:#1a1a2e,stroke:#00d2ff,color:#fff
+    style APP fill:#1a1a2e,stroke:#7b2ff7,color:#fff
+    style STATES fill:#1a1a2e,stroke:#ff6b6b,color:#fff
+    </div>
+</div>
+
+<!-- 3. API 後端架構 -->
+<div class="diagram-section">
+    <h2>3. API 後端架構 (Backend API Architecture)</h2>
+    <div class="mermaid">
+graph LR
+    subgraph REQUEST["📨 請求"]
+        REQ["POST /api/chat<br/>{message, agentName,<br/>agentTitle, agentDesc}"]
+    end
+
+    subgraph MIDDLEWARE["🛡️ 安全中介層"]
+        RATE["Rate Limiting<br/>20 req/min per IP"]
+        CORS["CORS 白名單<br/>4 個信任網域"]
+        VALID["輸入驗證<br/>訊息 ≤ 5000 字元<br/>Agent名 ≤ 200 字元"]
+        HEADERS["安全標頭<br/>X-Content-Type-Options<br/>X-Frame-Options: DENY"]
+    end
+
+    subgraph AGENT_ROUTER["🤖 Agent 路由器"]
+        TELECOM["電信代理 x5<br/>5G · 光纖 · FAB"]
+        PM["專案管理代理"]
+        DESIGN["設計代理"]
+        MARKET["行銷代理"]
+        PRODUCT["產品代理"]
+        TEST["測試代理"]
+        HEALTH["健康教練"]
+        ZIWEI["紫微顧問"]
+    end
+
+    subgraph GEMINI_API["🧠 Google Gemini"]
+        GEN["generative-ai SDK<br/>Temperature: 0.7<br/>Max Tokens: 2048"]
+    end
+
+    REQ --> RATE --> CORS --> VALID --> HEADERS
+    HEADERS --> AGENT_ROUTER
+    AGENT_ROUTER -->|"System Prompt"| GEN
+    GEN -->|"AI Response"| RESPONSE["📤 JSON 回應"]
+
+    style REQUEST fill:#1a1a2e,stroke:#00d2ff,color:#fff
+    style MIDDLEWARE fill:#1a1a2e,stroke:#ff6b6b,color:#fff
+    style AGENT_ROUTER fill:#1a1a2e,stroke:#7b2ff7,color:#fff
+    style GEMINI_API fill:#1a1a2e,stroke:#ffd700,color:#fff
+    </div>
+</div>
+
+<!-- 4. 部門與代理結構 -->
+<div class="diagram-section">
+    <h2>4. 部門與 AI 代理結構 (Departments & Agents)</h2>
+    <div class="mermaid">
+graph TD
+    STUDIO["🏢 Contains Studio<br/>AI Agents Platform"]
+
+    ENG["⚡ 工程部<br/>Engineering"]
+    DES["🎨 設計部<br/>Design"]
+    MKT["📊 行銷部<br/>Marketing"]
+    PRD["📦 產品部<br/>Product"]
+    PMO["📋 專案管理部<br/>Project Management"]
+    OPS["⚙️ 營運部<br/>Studio Operations"]
+    QA["🧪 測試部<br/>Testing"]
+    BONUS["💪 健康福利<br/>Bonus"]
+
+    STUDIO --> ENG
+    STUDIO --> DES
+    STUDIO --> MKT
+    STUDIO --> PRD
+    STUDIO --> PMO
+    STUDIO --> OPS
+    STUDIO --> QA
+    STUDIO --> BONUS
+
+    ENG --> E1["5G 網路規劃師"]
+    ENG --> E2["光纖網路專家"]
+    ENG --> E3["FAB 網路規劃師"]
+    ENG --> E4["設備 IoT 工程師"]
+    ENG --> E5["電信基礎設施"]
+
+    DES --> D1["視覺設計師"]
+    DES --> D2["UX 設計師"]
+
+    MKT --> M1["行銷策略師"]
+    MKT --> M2["數據分析師"]
+
+    BONUS --> B1["健康教練<br/>💰 3次免費"]
+    BONUS --> B2["紫微顧問"]
+
+    style STUDIO fill:#7b2ff7,stroke:#7b2ff7,color:#fff
+    style ENG fill:#1a1a2e,stroke:#ff6b6b,color:#fff
+    style DES fill:#1a1a2e,stroke:#ff9a76,color:#fff
+    style MKT fill:#1a1a2e,stroke:#ffd700,color:#fff
+    style PRD fill:#1a1a2e,stroke:#00d2ff,color:#fff
+    style PMO fill:#1a1a2e,stroke:#7bed9f,color:#fff
+    style OPS fill:#1a1a2e,stroke:#70a1ff,color:#fff
+    style QA fill:#1a1a2e,stroke:#ff6348,color:#fff
+    style BONUS fill:#1a1a2e,stroke:#ff4757,color:#fff
+    </div>
+</div>
+
+<!-- 5. 部署流程 -->
+<div class="diagram-section">
+    <h2>5. CI/CD 部署流程 (Deployment Pipeline)</h2>
+    <div class="mermaid">
+graph LR
+    DEV["👨‍💻 開發者<br/>本地開發"]
+    GIT["GitHub Repo<br/>JeffWang110/<br/>contains-studio-app"]
+    VERCEL_BUILD["Vercel Build<br/>npm run build<br/>Vite 打包"]
+    DEPLOY["Production<br/>contains-studio-app<br/>.vercel.app"]
+
+    DEV -->|"git push"| GIT
+    GIT -->|"Auto Deploy<br/>Webhook"| VERCEL_BUILD
+    VERCEL_BUILD -->|"靜態 → CDN<br/>API → Serverless"| DEPLOY
+
+    DEV -->|"npx vercel<br/>--prod --yes"| DEPLOY
+
+    ENV["🔐 環境變數<br/>GEMINI_API_KEY"]
+    ENV -.->|"Vercel Dashboard"| VERCEL_BUILD
+
+    style DEV fill:#1a1a2e,stroke:#7b2ff7,color:#fff
+    style GIT fill:#1a1a2e,stroke:#00d2ff,color:#fff
+    style VERCEL_BUILD fill:#1a1a2e,stroke:#ffd700,color:#fff
+    style DEPLOY fill:#1a1a2e,stroke:#7bed9f,color:#fff
+    style ENV fill:#1a1a2e,stroke:#ff6b6b,color:#fff
+    </div>
+</div>
+
+<!-- 6. 專案檔案結構 -->
+<div class="diagram-section">
+    <h2>6. 專案檔案結構 (Project File Structure)</h2>
+    <div class="mermaid">
+graph TD
+    ROOT["📁 contains-studio-app/"]
+
+    CLAUDE_DIR["📁 .claude/<br/>Claude Code 設定"]
+    AGENTS_DIR["📁 .agents/<br/>Agent 指令模板"]
+    GITHUB_DIR["📁 .github/<br/>Copilot 設定"]
+    API_DIR["📁 api/<br/>後端 API"]
+    PUBLIC_DIR["📁 public/<br/>靜態資源"]
+    SRC_DIR["📁 src/<br/>前端原始碼"]
+    CONFIG["⚙️ 設定檔"]
+
+    ROOT --> CLAUDE_DIR
+    ROOT --> AGENTS_DIR
+    ROOT --> GITHUB_DIR
+    ROOT --> API_DIR
+    ROOT --> PUBLIC_DIR
+    ROOT --> SRC_DIR
+    ROOT --> CONFIG
+
+    CLAUDE_DIR --> SK["skills/<br/>apiprotect · github-mcp<br/>line-mcp · party · vercel-mcp"]
+
+    API_DIR --> CHAT_JS["chat.js<br/>Vercel Serverless Function"]
+
+    SRC_DIR --> APP_JSX["App.jsx (497行)<br/>主要 React 元件"]
+    SRC_DIR --> MAIN_JSX["main.jsx<br/>React 進入點"]
+    SRC_DIR --> INDEX_CSS["index.css<br/>Tailwind + 全域樣式"]
+
+    CONFIG --> PKG["package.json"]
+    CONFIG --> VITE["vite.config.js"]
+    CONFIG --> TW["tailwind.config.js"]
+    CONFIG --> PC["postcss.config.js"]
+    CONFIG --> VC["vercel.json"]
+    CONFIG --> ENV[".env.example"]
+
+    style ROOT fill:#7b2ff7,stroke:#7b2ff7,color:#fff
+    style SRC_DIR fill:#1a1a2e,stroke:#00d2ff,color:#fff
+    style API_DIR fill:#1a1a2e,stroke:#ff6b6b,color:#fff
+    style CLAUDE_DIR fill:#1a1a2e,stroke:#ffd700,color:#fff
+    style CONFIG fill:#1a1a2e,stroke:#7bed9f,color:#fff
+    </div>
+</div>
+
+<!-- 技術棧總覽 -->
+<div class="diagram-section">
+    <h2>7. 技術棧總覽 (Tech Stack Overview)</h2>
+    <div class="tech-stack">
+        <div class="tech-card">
+            <h3>前端 Frontend</h3>
+            <ul>
+                <li>React 18.2.0</li>
+                <li>Vite 5.1.4</li>
+                <li>Tailwind CSS 3.4.1</li>
+                <li>PostCSS + Autoprefixer</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <h3>後端 Backend</h3>
+            <ul>
+                <li>Vercel Serverless Functions</li>
+                <li>Node.js (ES Modules)</li>
+                <li>api/chat.js 端點</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <h3>AI 整合</h3>
+            <ul>
+                <li>Google Gemini AI</li>
+                <li>@google/generative-ai 0.24.1</li>
+                <li>17+ Agent Personas</li>
+                <li>Temperature: 0.7</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <h3>部署 Deployment</h3>
+            <ul>
+                <li>Vercel (Hosting + CDN)</li>
+                <li>GitHub CI/CD</li>
+                <li>自動部署 (Push to Main)</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <h3>安全 Security</h3>
+            <ul>
+                <li>Rate Limiting (20/min)</li>
+                <li>CORS 白名單</li>
+                <li>輸入驗證 (5000 字元)</li>
+                <li>安全標頭 (DENY frame)</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <h3>金流 Payment</h3>
+            <ul>
+                <li>Stripe 付款整合</li>
+                <li>3 次免費分析</li>
+                <li>localStorage 狀態追蹤</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <h3>開發工具 DevTools</h3>
+            <ul>
+                <li>Claude Code (5 MCP Skills)</li>
+                <li>GitHub Copilot</li>
+                <li>ESBuild + Rollup</li>
+            </ul>
+        </div>
+        <div class="tech-card">
+            <h3>相關專案 Ecosystem</h3>
+            <ul>
+                <li>agents.jeffwang.work</li>
+                <li>party.jeffwang.work</li>
+                <li>books.jeffwang.work</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#7b2ff7',
+            primaryTextColor: '#fff',
+            primaryBorderColor: '#7b2ff7',
+            lineColor: '#00d2ff',
+            secondaryColor: '#1a1a2e',
+            tertiaryColor: '#302b63',
+            fontFamily: 'Segoe UI, Microsoft JhengHei, sans-serif',
+            fontSize: '14px',
+            nodeBorder: '#7b2ff7',
+            mainBkg: '#1a1a2e',
+            clusterBkg: 'rgba(123,47,247,0.08)',
+            clusterBorder: '#7b2ff7'
+        },
+        flowchart: {
+            useMaxWidth: true,
+            htmlLabels: true,
+            curve: 'basis',
+            padding: 20
+        }
+    });
+</script>
+
+</body>
+</html>
