@@ -1,0 +1,48 @@
+# ============================================================
+# Dockerfile 範例 - Node.js AI Agent 應用
+# ============================================================
+#
+# 多階段建構，最終映像精簡
+# 適用於 Next.js、Express、Fastify 等 Node.js 專案
+
+# Stage 1: 安裝依賴
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
+RUN \
+    if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+    elif [ -f package-lock.json ]; then npm ci; \
+    elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm install --frozen-lockfile; \
+    else npm install; \
+    fi
+
+# Stage 2: 建構
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build 2>/dev/null || echo "No build step found, skipping..."
+
+# Stage 3: 執行
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# 建立非 root 使用者
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 appuser
+
+# 複製建構結果
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next 2>/dev/null || true
+COPY --from=builder /app/dist ./dist 2>/dev/null || true
+COPY --from=builder /app/build ./build 2>/dev/null || true
+COPY --from=builder /app/public ./public 2>/dev/null || true
+
+USER appuser
+
+EXPOSE 3000
+
+CMD ["node", "dist/index.js"]

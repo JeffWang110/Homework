@@ -1,0 +1,104 @@
+# ============================================================
+# Docker Compose 範例 - AI Agent 專案部署
+# ============================================================
+#
+# 使用方式：
+#   1. 複製此檔案: cp docker-compose.example.yml docker-compose.yml
+#   2. 修改環境變數和域名
+#   3. 啟動: docker compose up -d
+#
+# 如果你用 Coolify，這個檔案放在 repo 根目錄，
+# Coolify 會自動偵測並用它來部署。
+
+services:
+  # ============================================================
+  # 你的 AI Agent 應用
+  # ============================================================
+  agent-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agent-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # 把敏感資料放在 .env 檔案中
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/agents}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+    labels:
+      # Coolify / Traefik 自動反向代理標籤
+      - "traefik.enable=true"
+      - "traefik.http.routers.agent.rule=Host(`agents.jeffwang.work`)"
+      - "traefik.http.routers.agent.tls=true"
+      - "traefik.http.routers.agent.tls.certresolver=letsencrypt"
+      - "traefik.http.services.agent.loadbalancer.server.port=3000"
+
+  # ============================================================
+  # PostgreSQL 資料庫
+  # ============================================================
+  db:
+    image: postgres:16-alpine
+    container_name: agent-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agents
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme_in_production}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"  # 只綁 localhost，不對外開放
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # ============================================================
+  # Redis（快取 / 佇列）
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: agent-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    ports:
+      - "127.0.0.1:6379:6379"  # 只綁 localhost
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+# ============================================================
+# 持久化儲存
+# ============================================================
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+# ============================================================
+# 網路
+# ============================================================
+networks:
+  app-network:
+    driver: bridge
