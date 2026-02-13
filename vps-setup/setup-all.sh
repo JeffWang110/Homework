@@ -124,11 +124,12 @@ show_menu() {
     echo "  1) 完整安裝（Coolify + Claude Code + tmux）"
     echo "  2) 只裝 Coolify"
     echo "  3) 只裝 Claude Code"
-    echo "  4) 只設定 tmux + SSH"
-    echo "  5) 只設定防火牆"
+    echo "  4) 只裝 Roo Code（code-server / CLI）"
+    echo "  5) 只設定 tmux + SSH"
+    echo "  6) 只設定防火牆"
     echo "  0) 離開"
     echo ""
-    read -rp "請選擇 [0-5]: " choice
+    read -rp "請選擇 [0-6]: " choice
 }
 
 # ============================================================
@@ -146,6 +147,10 @@ run_claude_code_install() {
 
 run_tmux_ssh_setup() {
     bash "$SCRIPT_DIR/03-setup-tmux-ssh.sh"
+}
+
+run_roo_code_install() {
+    bash "$SCRIPT_DIR/04-install-roo-code.sh"
 }
 
 # ============================================================
@@ -175,9 +180,14 @@ main() {
             run_claude_code_install
             ;;
         4)
-            run_tmux_ssh_setup
+            install_base_packages
+            install_docker
+            run_roo_code_install
             ;;
         5)
+            run_tmux_ssh_setup
+            ;;
+        6)
             setup_firewall
             ;;
         0)
