@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>入厝趴 — 認領清單</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+    const { PartyPopper, Utensils, Beer, Coffee, Camera, Copy, Check } = lucideReact;
+
+    function App() {
+      const [slots, setSlots] = useState(() =>
+        Array.from({ length: 10 }, (_, i) => ({ id: i + 1, name: '', item: '' }))
+      );
+      const [copied, setCopied] = useState(false);
+
+      const updateSlot = (id, field, value) => {
+        setSlots(prev => prev.map(s => (s.id === id ? { ...s, [field]: value } : s)));
+      };
+
+      const copyToClipboard = () => {
+        const filled = slots.filter(s => s.name.trim() || s.item.trim());
+        let text = '\u{1F4A5} 入厝大作戰 認領清單 \u{1F4A5}\n\n';
+        if (filled.length === 0) {
+          text += '還沒有人報名喔！快來卡位！';
+        } else {
+          text += filled.map(s => `[${s.id}] ${s.name || '神秘人'} \u{1F449} 帶：${s.item || '驚喜'}`).join('\n');
+        }
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+        catch (e) { console.error('複製失敗', e); }
+        document.body.removeChild(ta);
+      };
+
+      const sunburstStyle = {
+        backgroundImage: 'repeating-conic-gradient(from 0deg, #f4e8d3 0deg 15deg, #eee1ca 15deg 30deg)'
+      };
+
+      return (
+        <div className="min-h-screen font-sans text-neutral-900 pb-20" style={sunburstStyle}>
+          <div className="max-w-md mx-auto bg-transparent relative">
+
+            {/* 返回首頁按鈕 */}
+            <a href="index.html"
+               className="fixed top-4 left-4 z-50 flex items-center gap-1.5 bg-white border-[3px] border-black rounded-xl px-3 py-2 font-black text-sm shadow-[3px_3px_0_0_rgba(0,0,0,1)] hover:shadow-[1px_1px_0_0_rgba(0,0,0,1)] hover:translate-x-0.5 hover:translate-y-0.5 transition-all">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              Home
+            </a>
+
+            {/* Header */}
+            <div className="bg-gradient-to-b from-[#e52d27] to-[#d63b15] px-5 pt-8 pb-12 text-white border-b-4 border-black relative z-10">
+              <PartyPopper size={28} className="mb-3 text-white" />
+              <h1 className="text-3xl font-black mb-4 leading-tight tracking-wide drop-shadow-md">
+                「4男4女4樓之2加2」<br/>入厝趴
+              </h1>
+              <div className="flex flex-wrap gap-2">
+                <span className="flex items-center gap-1 border border-white/40 bg-white/10 px-2 py-1 rounded-md text-sm font-medium">
+                  <Utensils size={14} /> 正宗北平烤鴨
+                </span>
+                <span className="flex items-center gap-1 border border-white/40 bg-white/10 px-2 py-1 rounded-md text-sm font-medium">
+                  <Utensils size={14} /> 好市多蝦沙拉
+                </span>
+                <span className="flex items-center gap-1 border border-white/40 bg-white/10 px-2 py-1 rounded-md text-sm font-medium">
+                  <Beer size={14} /> 啤酒供應
+                </span>
+                <span className="flex items-center gap-1 border border-white/40 bg-white/10 px-2 py-1 rounded-md text-sm font-medium">
+                  <Coffee size={14} /> 外送飲料
+                </span>
+              </div>
+            </div>
+
+            {/* 漫畫風相框 */}
+            <div className="px-6 -mt-6 relative z-20 mb-8">
+              <div className="bg-white p-2 border-4 border-black transform -rotate-2 shadow-[6px_6px_0_0_rgba(0,0,0,1)] relative">
+                <div className="absolute -top-4 -left-4 bg-[#e52d27] text-white font-black py-1 px-4 border-4 border-black transform -rotate-6 shadow-[4px_4px_0_0_rgba(0,0,0,1)] z-10 text-lg tracking-wider">
+                  入厝大作戰！
+                </div>
+                <div className="aspect-[4/3] bg-amber-100 border-4 border-black relative overflow-hidden flex items-center justify-center bg-[radial-gradient(#d4b08c_1px,transparent_1px)] [background-size:10px_10px]">
+                  <div
+                    className="absolute top-2 left-4 text-4xl font-black text-[#ffea00] tracking-widest transform -rotate-12"
+                    style={{ textShadow: '3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000' }}>
+                    YA!!
+                  </div>
+                  <div className="absolute top-3 right-3 bg-white border-[3px] border-black rounded-full p-1.5 shadow-[2px_2px_0_0_rgba(0,0,0,1)]">
+                    <Camera size={20} className="text-black" />
+                  </div>
+                  <div className="text-black/20 font-bold text-xl text-center px-4 mt-8">
+                    [這裡想像有一張<br/>很酷的照片]
+                  </div>
+                  <div className="absolute bottom-3 right-3 bg-white border-4 border-black rounded-[2rem] rounded-br-none px-5 py-3 shadow-[4px_4px_0_0_rgba(0,0,0,1)] transform rotate-2">
+                    <div className="font-black text-center leading-tight text-lg">
+                      快來<br/>填表！
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 表單 */}
+            <div className="px-4 relative z-10">
+              <div className="bg-white border-4 border-black rounded-3xl pt-2 pb-6 px-4 sm:px-6 shadow-[8px_8px_0_0_rgba(0,0,0,1)]">
+                <div className="w-24 h-2 bg-[#ff8a00] mx-auto rounded-full mb-6 mt-2"></div>
+                <h2 className="text-2xl font-black text-center mb-6 tracking-wide text-black">
+                  你是哪一位？
+                </h2>
+                <div className="space-y-4">
+                  {slots.map(slot => (
+                    <div key={slot.id} className="flex gap-2">
+                      <div className="w-10 flex-shrink-0 flex items-center justify-center font-black text-lg border-[3px] border-black bg-[#ffea00] rounded-xl shadow-[2px_2px_0_0_rgba(0,0,0,1)]">
+                        {slot.id}
+                      </div>
+                      <div className="flex-1 flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={slot.name}
+                          onChange={e => updateSlot(slot.id, 'name', e.target.value)}
+                          placeholder="稱呼"
+                          className="w-full sm:w-1/3 border-[3px] border-black rounded-xl px-3 py-2 font-bold focus:outline-none focus:bg-orange-50 focus:shadow-[2px_2px_0_0_rgba(0,0,0,1)] transition-all placeholder:font-normal placeholder:text-neutral-400"
+                        />
+                        <input
+                          type="text"
+                          value={slot.item}
+                          onChange={e => updateSlot(slot.id, 'item', e.target.value)}
+                          placeholder="要帶什麼東西？"
+                          className="w-full sm:w-2/3 border-[3px] border-black rounded-xl px-3 py-2 font-bold focus:outline-none focus:bg-orange-50 focus:shadow-[2px_2px_0_0_rgba(0,0,0,1)] transition-all placeholder:font-normal placeholder:text-neutral-400"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 按鈕 */}
+                <div className="mt-8 pt-6 border-t-[3px] border-black border-dashed flex justify-center">
+                  <button
+                    onClick={copyToClipboard}
+                    className={`flex items-center gap-2 px-6 py-3 border-[3px] border-black font-black text-lg rounded-xl transition-all transform active:translate-y-1 active:translate-x-1 active:shadow-none ${
+                      copied
+                        ? 'bg-green-400 shadow-[4px_4px_0_0_rgba(0,0,0,1)]'
+                        : 'bg-[#ffea00] hover:bg-[#ffe100] shadow-[4px_4px_0_0_rgba(0,0,0,1)]'
+                    }`}>
+                    {copied ? <Check size={24} strokeWidth={3} /> : <Copy size={24} strokeWidth={3} />}
+                    {copied ? '已複製清單！' : '複製認領清單'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
